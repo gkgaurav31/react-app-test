@@ -84,29 +84,21 @@ goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Deployment
 :: ----------
-
 :Deployment
-echo Handling node.js deployment.
 
-:: 1. KuduSync
-IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
+ECHO 1 - Install component dependencies ...
+CD /D %DEPLOYMENT_SOURCE%
+CALL npm install --no-optional
+ECHO.
 
-:: 2. Select node version
-call :SelectNodeVersion
+ECHO 2 - Build components ...
+CALL npm run build
+ECHO.
 
-:: 3. Install npm packages
-IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  pushd "%DEPLOYMENT_TARGET%"
-  call :ExecuteCmd !NPM_CMD! install --production
-  IF !ERRORLEVEL! NEQ 0 goto error
-  popd
-)
-
-:: 4. TEST:
-call :ExecuteCmd !NPM_CMD! run build
+ECHO 3 - Install app dependencies ...
+CD /D %DEPLOYMENT_SOURCE%\app
+CALL npm install --no-optional
+ECHO.
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 goto end
